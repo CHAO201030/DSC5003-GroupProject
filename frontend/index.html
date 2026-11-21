@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CloudDisk · 云盘文档管理</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- ------------------------------------------------------------------ -->
+  <!-- Login / register                                                    -->
+  <!-- ------------------------------------------------------------------ -->
+  <div id="auth-view" class="auth-view">
+    <div class="auth-glow"></div>
+    <div class="auth-card">
+      <div class="brand-block">
+        <div class="brand-icon">☁</div>
+        <div>
+          <h1>CloudDisk</h1>
+          <p>安全存储 · 关键词搜索 · 语义检索</p>
+        </div>
+      </div>
+
+      <div class="auth-tabs" role="tablist">
+        <button type="button" class="auth-tab active" data-auth-tab="login">登录</button>
+        <button type="button" class="auth-tab" data-auth-tab="register">注册</button>
+      </div>
+
+      <form id="auth-form" autocomplete="on" novalidate>
+        <label class="field">
+          <span>用户名</span>
+          <input id="auth-username" name="username" type="text" minlength="3" maxlength="32"
+                 placeholder="3-32 位用户名" autocomplete="username" required>
+        </label>
+        <label class="field">
+          <span>密码</span>
+          <input id="auth-password" name="password" type="password" minlength="6" maxlength="256"
+                 placeholder="至少 6 个字符" autocomplete="current-password" required>
+        </label>
+        <p id="auth-error" class="error-text" role="alert"></p>
+        <button id="auth-submit" class="btn primary block" type="submit">登录</button>
+      </form>
+
+      <p class="auth-hint">
+        相同内容的文件在磁盘上只保存一份；支持 TXT / HTML / Markdown 正文索引。
+      </p>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------------ -->
+  <!-- Main application                                                    -->
+  <!-- ------------------------------------------------------------------ -->
+  <div id="app-view" class="app-view hidden">
+    <header class="topbar">
+      <div class="logo" title="CloudDisk">☁ <span>CloudDisk</span></div>
+
+      <div class="global-search">
+        <select id="search-mode" aria-label="搜索模式">
+          <option value="all">全部</option>
+          <option value="filename">文件名</option>
+          <option value="content">正文</option>
+          <option value="semantic">语义搜索</option>
+        </select>
+        <input id="search-input" type="search" placeholder="搜索文件名、正文，或用自然语言描述…" maxlength="500">
+        <button id="search-btn" class="btn primary" title="搜索">搜索</button>
+      </div>
+
+      <div class="user-area">
+        <span id="username" class="username"></span>
+        <button id="logout-btn" class="btn ghost small">退出</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="side-section">
+          <div class="side-head">
+            <span>我的文件</span>
+            <button id="refresh-btn" class="icon-btn" title="刷新">⟳</button>
+          </div>
+          <nav id="folder-tree" class="folder-tree" aria-label="文件夹树"></nav>
+        </div>
+
+        <div class="side-section index-card">
+          <div class="side-head">
+            <span>索引状态</span>
+            <button id="index-refresh" class="icon-btn" title="刷新索引状态">⟳</button>
+          </div>
+          <div id="index-summary" class="index-summary">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+          <button id="index-detail-btn" class="btn ghost block small">查看索引详情 / 重建</button>
+        </div>
+      </aside>
+
+      <main class="content">
+        <!-- File browser -->
+        <section id="files-view">
+          <div class="breadcrumb-row">
+            <nav id="breadcrumb" class="breadcrumb" aria-label="路径"></nav>
+          </div>
+
+          <div class="toolbar">
+            <button id="new-folder-btn" class="btn">＋ 新建文件夹</button>
+            <button id="upload-btn" class="btn primary">⇪ 上传文件</button>
+            <input id="file-input" type="file" multiple hidden>
+            <span id="usage" class="usage"></span>
+          </div>
+
+          <div id="drop-zone" class="drop-zone">
+            <span>拖拽文件到这里上传</span>
+          </div>
+
+          <div id="upload-progress" class="upload-progress hidden">
+            <div class="upload-label"><span id="upload-name">上传中…</span><span id="upload-pct">0%</span></div>
+            <div class="bar"><div id="upload-bar"></div></div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="file-table">
+              <thead>
+                <tr>
+                  <th class="col-name">名称</th>
+                  <th class="col-size">大小</th>
+                  <th class="col-time">修改时间</th>
+                  <th class="col-actions">操作</th>
+                </tr>
+              </thead>
+              <tbody id="file-tbody"></tbody>
+            </table>
+            <div id="empty-state" class="empty hidden">
+              <div class="empty-icon">📂</div>
+              <p>这个文件夹还是空的</p>
+              <p class="muted">上传文件或新建文件夹开始使用</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Search results -->
+        <section id="search-view" class="hidden">
+          <div class="search-header">
+            <div>
+              <h2 id="search-title">搜索结果</h2>
+              <p id="search-meta" class="search-meta"></p>
+            </div>
+            <button id="back-to-files" class="btn ghost">← 返回文件</button>
+          </div>
+
+          <div id="semantic-banner" class="banner hidden"></div>
+          <div id="search-results" class="search-results"></div>
+          <div id="search-pagination" class="pagination hidden">
+            <button id="search-prev" class="btn ghost small">上一页</button>
+            <span id="search-page-label"></span>
+            <button id="search-next" class="btn ghost small">下一页</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------------ -->
+  <!-- Generic modal                                                       -->
+  <!-- ------------------------------------------------------------------ -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3 id="modal-title"></h3>
+      <div id="modal-body" class="modal-body"></div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn ghost">取消</button>
+        <button id="modal-ok" class="btn primary">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Index details / rebuild modal -->
+  <div id="index-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card wide">
+      <div class="modal-head">
+        <h3>索引状态与重建</h3>
+        <button id="index-close" class="icon-btn" title="关闭">✕</button>
+      </div>
+      <div class="index-services" id="index-services"></div>
+      <div class="index-toolbar">
+        <select id="index-filter" aria-label="筛选索引状态">
+          <option value="">全部文件</option>
+          <option value="failed">仅失败</option>
+          <option value="pending">仅进行中</option>
+          <option value="ready">仅已就绪</option>
+        </select>
+        <button class="btn small" data-rebuild="keyword">重建关键词索引</button>
+        <button class="btn small" data-rebuild="semantic">重建语义索引</button>
+        <button class="btn primary small" data-rebuild="all">全部重建</button>
+      </div>
+      <div class="table-wrap modal-table">
+        <table class="file-table">
+          <thead>
+            <tr>
+              <th>文件</th>
+              <th>关键词</th>
+              <th>语义</th>
+              <th>重试</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="index-tbody"></tbody>
+        </table>
+      </div>
+      <p class="muted small-text">索引失败不会影响文件上传、下载和删除；修复服务后可单独重试或全量重建。</p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

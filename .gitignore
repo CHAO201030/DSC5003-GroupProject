@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local configuration / secrets
+.env
+.env.local
+
+# Runtime data (objects, indexes, downloaded models)
+data/objects/*
+data/tmp/*
+data/search/*
+data/faiss/*
+data/models/*
+data/logs/*
+!data/objects/.gitkeep
+!data/tmp/.gitkeep
+!data/search/.gitkeep
+!data/faiss/.gitkeep
+!data/models/.gitkeep
+!data/logs/.gitkeep
+*.db
+*.sqlite3
+*.npy
+*.index
+
+# Conda/pip temporary artifacts
+condaenv.*.requirements.txt
+.condarc.local
+
+# Generated caches
+*.log
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

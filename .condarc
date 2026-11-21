@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+# USTC mirror is fast from mainland China; override with CONDA_CHANNEL_ALIAS
+# (or edit this file) if you prefer the official channel.
+channel_alias: https://mirrors.ustc.edu.cn/anaconda/cloud
+show_channel_urls: true

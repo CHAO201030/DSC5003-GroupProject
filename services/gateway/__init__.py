@@ -1,0 +1,1 @@
+"""CloudDisk HTTP gateway (FastAPI)."""

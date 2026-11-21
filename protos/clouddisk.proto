@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package clouddisk;
+
+// ---------------------------------------------------------------------------
+// Shared document payload
+// ---------------------------------------------------------------------------
+message Document {
+  string file_id = 1;        // VFS node id, as a string
+  string title = 2;          // logical file name
+  string content = 3;        // extracted plain text (may be empty)
+  string tags = 4;           // reserved for tags (comma separated)
+  int64 owner_id = 5;
+  string mime_type = 6;
+  string updated_at = 7;     // ISO-8601 UTC
+  int64 version = 8;         // VFS node content version
+  string description = 9;    // optional user description
+}
+
+// ---------------------------------------------------------------------------
+// Search service (SQLite FTS5 + jieba)
+// ---------------------------------------------------------------------------
+message IndexDocumentRequest {
+  Document document = 1;
+}
+
+message IndexDocumentResponse {
+  bool success = 1;
+  string message = 2;
+  string index_version = 3;
+  string model_version = 4;
+}
+
+message UpdateDocumentRequest {
+  Document document = 1;
+}
+
+message UpdateDocumentResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message DeleteDocumentRequest {
+  string file_id = 1;
+}
+
+message DeleteDocumentResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message SearchRequest {
+  string query = 1;
+  string mode = 2;       // all | filename | content
+  int32 offset = 3;
+  int32 limit = 4;
+  int64 owner_id = 5;    // 0 means no owner filter
+}
+
+message SearchHit {
+  string file_id = 1;
+  double score = 2;
+  string snippet = 3;    // plain text snippet window
+  string title = 4;
+  string mime_type = 5;
+  string updated_at = 6;
+  string highlight = 7;  // HTML-escaped snippet with <mark> tags
+  int64 version = 8;
+}
+
+message SearchResponse {
+  repeated SearchHit hits = 1;
+  int32 total = 2;
+  int64 elapsed_ms = 3;
+  string engine = 4;
+  bool degraded = 5;
+  string message = 6;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  bool healthy = 1;
+  string status = 2;
+  string details = 3;
+  int32 document_count = 4;
+  string model_version = 5;
+  string engine = 6;
+}
+
+service SearchService {
+  rpc IndexDocument(IndexDocumentRequest) returns (IndexDocumentResponse);
+  rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
+  rpc Search(SearchRequest) returns (SearchResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+// ---------------------------------------------------------------------------
+// Semantic service (sentence-transformers + FAISS)
+// ---------------------------------------------------------------------------
+message SemanticSearchRequest {
+  string query = 1;
+  int32 limit = 2;
+  int64 owner_id = 3;
+}
+
+message SemanticHit {
+  string file_id = 1;
+  double score = 2;
+  string snippet = 3;
+  string title = 4;
+  string mime_type = 5;
+  string updated_at = 6;
+  int64 version = 7;
+}
+
+message SemanticSearchResponse {
+  repeated SemanticHit hits = 1;
+  int64 elapsed_ms = 2;
+  string model_version = 3;
+  string engine = 4;
+  bool degraded = 5;
+  string message = 6;
+}
+
+message SimilarFilesRequest {
+  string file_id = 1;
+  int32 limit = 2;
+  int64 owner_id = 3;
+}
+
+message SimilarFilesResponse {
+  repeated SemanticHit hits = 1;
+  string model_version = 2;
+}
+
+message RebuildIndexRequest {
+  bool clear = 1;
+  repeated Document documents = 2;
+}
+
+message RebuildIndexResponse {
+  bool success = 1;
+  int32 indexed_documents = 2;
+  int32 indexed_chunks = 3;
+  string model_version = 4;
+  string message = 5;
+}
+
+service SemanticService {
+  rpc IndexDocument(IndexDocumentRequest) returns (IndexDocumentResponse);
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
+  rpc SemanticSearch(SemanticSearchRequest) returns (SemanticSearchResponse);
+  rpc SimilarFiles(SimilarFilesRequest) returns (SimilarFilesResponse);
+  rpc RebuildIndex(RebuildIndexRequest) returns (RebuildIndexResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
